@@ -3,6 +3,7 @@
 A content-based movie recommender built with Streamlit and Python. Uses TF-IDF vectorization and cosine similarity to suggest films based on user preferences.
 
 ![Screenshot](mv1.png)
+![Screenshot](mv2.png)
 
 ## Features
 - **Genre filtering**: Browse movies by genre
