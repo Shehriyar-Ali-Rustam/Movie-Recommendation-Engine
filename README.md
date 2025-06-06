@@ -1,21 +1,32 @@
-# 🎬 Movie Recommendation System
+# 🎬 Movie Recommendation System  
+**Content-based recommender using TF-IDF and cosine similarity**  
 
-A content-based movie recommender built with Streamlit and Python. Uses TF-IDF vectorization and cosine similarity to suggest films based on user preferences.
+![App Screenshot](/mv1.png)
+![App Screenshot](/mv2.png)
 
-![Screenshot](mv1.png)
-![Screenshot](mv2.png)
+## Features  
+- AI-powered recommendations  
+- Genre filtering  
+- Cinematic UI with purple theme  
 
-## Features
-- **Genre filtering**: Browse movies by genre
-- **AI recommendations**: Finds similar movies using NLP techniques
-- **Cinematic UI**: Purple/black theme with responsive design
+## How to Run  
+1. Clone the repo:  
+   ```bash  
+   git clone https://github.com/YOUR-USERNAME/movie-recommendation-system.git  
+   ```  
+2. Install dependencies:  
+   ```bash  
+   pip install -r requirements.txt  
+   ```  
+3. Run the app:  
+   ```bash  
+   streamlit run app.py  
+   ```  
 
-## Tech Stack
-- Python
-- Streamlit
-- Scikit-learn (TF-IDF, cosine similarity)
+## Files  
+- `app.py`: Main application code  
+- `movie.jpeg`: Background image  
+- `requirements.txt`: Dependency list  
 
-## How to Run
-1. Clone the repo:
-   ```bash
-   git clone https://github.com/yourusername/movie-recommendation-system.git
+---
+**Note**: Replace `YOUR-USERNAME` with your actual GitHub username.  
