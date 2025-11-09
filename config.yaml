@@ -1,0 +1,33 @@
+# Movie Recommendation System Configuration
+
+# Application Settings
+app:
+  title: "CINEMATIC RECOMMENDER"
+  page_icon: "🎬"
+  layout: "wide"
+
+# UI Theme
+theme:
+  primary_color: "#8A2BE2"  # Purple accent
+  secondary_color: "#221F1F"
+  light_color: "#F5F5F1"
+  dark_color: "#000000"
+  accent_color: "#9932CC"  # Darker purple
+
+# Recommendation Settings
+recommendation:
+  default_count: 5
+  min_recommendations: 1
+  max_recommendations: 10
+
+# Data Sources
+data:
+  movies_csv: "movies.csv"
+  background_image: "movie.jpeg"
+
+# Feature Flags
+features:
+  enable_genre_filter: true
+  enable_movie_search: true
+  show_similarity_scores: false
+  enable_export: false
