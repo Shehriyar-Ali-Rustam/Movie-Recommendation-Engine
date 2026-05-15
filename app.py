@@ -13,6 +13,9 @@ from PIL import Image
 import base64
 import os
 import sys
+import json
+import urllib.parse
+import urllib.request
 
 st.set_page_config(
     page_title="Cinematic — AI Movie Recommender",
@@ -262,25 +265,59 @@ p, label, span, div, .stMarkdown {
     z-index: 1;
 }
 
-/* Giant rank watermark — the visual hero */
-.poster-rank {
+/* Real poster image */
+.poster-img {
     position: absolute;
-    bottom: -22px;
-    left: -10px;
-    font-family: 'Space Grotesk', sans-serif !important;
-    font-weight: 800;
-    font-size: 11rem;
-    line-height: 0.85;
-    letter-spacing: -0.06em;
-    color: rgba(255, 255, 255, 0.96);
-    -webkit-text-stroke: 2px rgba(255, 255, 255, 0.6);
-    text-shadow: 0 6px 30px rgba(0, 0, 0, 0.5);
-    z-index: 2;
-    pointer-events: none;
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s ease;
 }
-.poster:hover .poster-rank {
-    transform: translate(4px, -4px) scale(1.02);
+.poster:hover .poster-img {
+    transform: scale(1.08);
+    filter: brightness(1.05) saturate(1.1);
+}
+
+/* Compact rank badge in top-left (no longer the watermark) */
+.poster-rank-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 9px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 999px;
+    color: white !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-weight: 700;
+    font-size: 0.78rem;
+    z-index: 3;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.poster.top1 .poster-rank-badge {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    border-color: rgba(251, 191, 36, 0.6);
+    color: #1a1408 !important;
+    box-shadow: 0 4px 14px rgba(251, 191, 36, 0.5);
+}
+.poster.top2 .poster-rank-badge {
+    background: linear-gradient(135deg, #e5e7eb, #9ca3af);
+    border-color: rgba(229, 231, 235, 0.6);
+    color: #1a1a1a !important;
+}
+.poster.top3 .poster-rank-badge {
+    background: linear-gradient(135deg, #fb923c, #c2410c);
+    border-color: rgba(251, 146, 60, 0.6);
+    color: #1a0e08 !important;
 }
 
 /* Top-right floating rating */
@@ -304,47 +341,55 @@ p, label, span, div, .stMarkdown {
 }
 .poster-rating .star { color: #fbbf24; filter: drop-shadow(0 0 4px rgba(251,191,36,0.6)); }
 
-/* Top-left small genre eyebrow */
+/* Genre eyebrow, positioned just under rank badge */
 .poster-genre {
     position: absolute;
-    top: 14px;
-    left: 14px;
-    padding: 4px 10px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    top: 50px;
+    left: 12px;
+    padding: 3px 9px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border-radius: 999px;
-    color: rgba(255, 255, 255, 0.92) !important;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9) !important;
     font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 500;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     z-index: 3;
-    max-width: calc(100% - 80px);
+    max-width: calc(100% - 90px);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.poster:hover .poster-genre {
+    opacity: 1;
+    transform: translateY(0);
 }
 
-/* Title block sitting at the bottom */
+/* Title block — sits in a dark gradient at the bottom for guaranteed contrast */
 .poster-info {
     position: absolute;
     left: 0; right: 0; bottom: 0;
-    padding: 1rem 1.1rem 1.05rem;
+    padding: 2.5rem 1rem 1rem;
     z-index: 3;
-    transform: translateY(0);
-    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 45%, rgba(0,0,0,0.95) 100%);
+    transition: padding-bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .poster-info .title {
     font-family: 'Space Grotesk', sans-serif !important;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.02rem;
     color: white !important;
-    line-height: 1.15;
-    margin: 0 0 4px 0;
-    text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+    line-height: 1.2;
+    margin: 0 0 5px 0;
+    text-shadow: 0 2px 14px rgba(0,0,0,0.85);
+    letter-spacing: -0.01em;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -352,12 +397,13 @@ p, label, span, div, .stMarkdown {
 }
 .poster-info .meta {
     font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.72rem;
-    color: rgba(255, 255, 255, 0.8) !important;
-    letter-spacing: 0.06em;
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.78) !important;
+    letter-spacing: 0.08em;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
+    text-transform: uppercase;
 }
 .poster-info .meta .dot {
     width: 3px; height: 3px;
@@ -804,6 +850,63 @@ def get_hybrid_recommendations(movie_title, movies_df, similarity_matrix, top_n=
         raise ValueError(f"Movie '{movie_title}' not found in database")
 
 
+def _wiki_summary(slug):
+    """Hit Wikipedia REST API for a page summary; return dict or None."""
+    encoded = urllib.parse.quote(slug.replace(" ", "_"), safe="_(),%")
+    url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{encoded}"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "CinematicRecommender/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            return json.loads(r.read().decode("utf-8", errors="ignore"))
+    except Exception:
+        return None
+
+
+def _wiki_search(query):
+    """Fallback: use MediaWiki search to find a matching page title."""
+    params = urllib.parse.urlencode({
+        "action": "query", "list": "search", "srsearch": query,
+        "format": "json", "srlimit": 3,
+    })
+    url = f"https://en.wikipedia.org/w/api.php?{params}"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "CinematicRecommender/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            data = json.loads(r.read().decode("utf-8", errors="ignore"))
+        return [h["title"] for h in data.get("query", {}).get("search", [])]
+    except Exception:
+        return []
+
+
+@st.cache_data(ttl=604800, show_spinner=False)
+def fetch_poster(title, year=None):
+    """Return a poster image URL for a movie, sourced from Wikipedia. None if not found."""
+    candidates = []
+    if year and pd.notna(year):
+        candidates.append(f"{title} ({int(year)} film)")
+    candidates += [f"{title} (film)", title]
+
+    def _extract(summary):
+        if not summary:
+            return None
+        img = (summary.get("originalimage") or {}).get("source") \
+              or (summary.get("thumbnail") or {}).get("source")
+        return img
+
+    for slug in candidates:
+        img = _extract(_wiki_summary(slug))
+        if img:
+            return img
+
+    # Search fallback
+    query = f"{title} film" + (f" {int(year)}" if year and pd.notna(year) else "")
+    for hit in _wiki_search(query):
+        img = _extract(_wiki_summary(hit))
+        if img:
+            return img
+    return None
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Load data
 # ─────────────────────────────────────────────────────────────────────────────
@@ -895,7 +998,8 @@ if 'rating' in movies.columns:
     for i, (_, m) in enumerate(top_rated.iterrows()):
         with poster_cols[i % 5]:
             c1, c2 = palette_for(m['title'])
-            year_str = f"{int(m['year'])}" if 'year' in m and pd.notna(m['year']) else "—"
+            year_val = m['year'] if 'year' in m and pd.notna(m['year']) else None
+            year_str = f"{int(year_val)}" if year_val is not None else "—"
             director_str = m['director'] if 'director' in m and pd.notna(m.get('director')) else "Unknown"
             primary_genre = "Film"
             if 'description' in m and pd.notna(m.get('description')):
@@ -906,16 +1010,25 @@ if 'rating' in movies.columns:
             elif i == 1: tier_class = "top2"
             elif i == 2: tier_class = "top3"
 
+            poster_url = fetch_poster(m['title'], year_val)
+
+            if poster_url:
+                image_html = f'<img class="poster-img" src="{poster_url}" alt="{m["title"]}" loading="lazy" referrerpolicy="no-referrer" />'
+            else:
+                image_html = (
+                    f'<div class="poster-bg" style="--p1: linear-gradient(135deg, {c1} 0%, {c2} 100%);"></div>'
+                    f'<div class="poster-vignette"></div>'
+                )
+
             st.markdown(
                 f"""
                 <div class="poster {tier_class}" style="animation-delay: {i * 0.05}s;">
-                    <div class="poster-bg" style="--p1: linear-gradient(135deg, {c1} 0%, {c2} 100%);"></div>
-                    <div class="poster-vignette"></div>
-                    <div class="poster-rank">{i+1}</div>
+                    {image_html}
+                    <div class="poster-rank-badge">#{i+1}</div>
                     <div class="poster-genre">{primary_genre}</div>
                     <div class="poster-rating"><span class="star">★</span> {m['rating']}</div>
                     <div class="poster-overlay">
-                        <div class="play-btn">▶ View</div>
+                        <div class="play-btn">▶ Details</div>
                         <div class="director">
                             <span class="lbl">Directed by</span>
                             {director_str}
@@ -926,7 +1039,7 @@ if 'rating' in movies.columns:
                         <div class="meta">
                             <span>{year_str}</span>
                             <span class="dot"></span>
-                            <span>#{i+1:02d} OF 10</span>
+                            <span>Rank #{i+1:02d}</span>
                         </div>
                     </div>
                 </div>
