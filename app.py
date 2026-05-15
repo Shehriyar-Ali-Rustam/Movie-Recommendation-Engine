@@ -205,62 +205,226 @@ p, label, span, div, .stMarkdown {
     transform: translateY(-2px);
 }
 
-/* ───── Top-rated grid cards ───── */
-.top-card {
+/* ───── Movie poster cards (Top Rated) ───── */
+.poster {
     position: relative;
-    padding: 1.1rem 1.2rem;
-    margin-bottom: 0.85rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    cursor: pointer;
+    isolation: isolate;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow:
+        0 12px 40px -12px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    margin-bottom: 1rem;
+    animation: posterIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+@keyframes posterIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Color-tinted gradient base — title hash decides the palette */
+.poster-bg {
+    position: absolute; inset: 0;
+    background: var(--p1, linear-gradient(135deg, #6366f1, #ec4899));
+    z-index: 0;
+}
+/* Layered gradient mesh on top of base for richness */
+.poster-bg::before {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(circle at 20% 10%, rgba(255,255,255,0.35), transparent 45%),
+        radial-gradient(circle at 80% 90%, rgba(0,0,0,0.4), transparent 50%);
+    mix-blend-mode: overlay;
+}
+/* Film grain on top of gradient */
+.poster-bg::after {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.65'/></svg>");
+    opacity: 0.18;
+    mix-blend-mode: overlay;
+}
+
+/* Dark vignette so text reads cleanly */
+.poster-vignette {
+    position: absolute; inset: 0;
+    background:
+        linear-gradient(180deg, rgba(0,0,0,0.0) 35%, rgba(0,0,0,0.45) 70%, rgba(0,0,0,0.85) 100%),
+        radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%);
+    z-index: 1;
+}
+
+/* Giant rank watermark — the visual hero */
+.poster-rank {
+    position: absolute;
+    bottom: -22px;
+    left: -10px;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-weight: 800;
+    font-size: 11rem;
+    line-height: 0.85;
+    letter-spacing: -0.06em;
+    color: rgba(255, 255, 255, 0.96);
+    -webkit-text-stroke: 2px rgba(255, 255, 255, 0.6);
+    text-shadow: 0 6px 30px rgba(0, 0, 0, 0.5);
+    z-index: 2;
+    pointer-events: none;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.poster:hover .poster-rank {
+    transform: translate(4px, -4px) scale(1.02);
+}
+
+/* Top-right floating rating */
+.poster-rating {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(251, 191, 36, 0.45);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 999px;
+    color: #fbbf24;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-weight: 700;
+    font-size: 0.85rem;
+    z-index: 3;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.poster-rating .star { color: #fbbf24; filter: drop-shadow(0 0 4px rgba(251,191,36,0.6)); }
+
+/* Top-left small genre eyebrow */
+.poster-genre {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    padding: 4px 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.92) !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    z-index: 3;
+    max-width: calc(100% - 80px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Title block sitting at the bottom */
+.poster-info {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 1rem 1.1rem 1.05rem;
+    z-index: 3;
+    transform: translateY(0);
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.poster-info .title {
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: white !important;
+    line-height: 1.15;
+    margin: 0 0 4px 0;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
 }
-.top-card::before {
-    content: "";
-    position: absolute; left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: var(--gradient-primary);
-    opacity: 0.5;
-    transition: opacity 0.3s;
-}
-.top-card:hover {
-    transform: translateY(-3px);
-    border-color: var(--border-hi);
-    box-shadow: var(--shadow-lg);
-}
-.top-card:hover::before { opacity: 1; }
-.top-card .rank {
+.poster-info .meta {
     font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.7rem;
-    color: var(--text-mute) !important;
-    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.8) !important;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
-.top-card .title {
-    font-family: 'Space Grotesk', sans-serif !important;
-    font-size: 1.02rem;
-    font-weight: 600;
-    color: var(--text) !important;
-    margin: 4px 0 6px 0;
-    line-height: 1.3;
+.poster-info .meta .dot {
+    width: 3px; height: 3px;
+    background: rgba(255, 255, 255, 0.55);
+    border-radius: 50%;
 }
-.top-card .meta {
-    display: flex; align-items: center; gap: 10px;
+
+/* Hover overlay: reveals director + nudges info up */
+.poster-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    padding: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(10,8,16,0.92) 100%);
+    opacity: 0;
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+.poster-overlay .director {
+    font-family: 'Inter', sans-serif !important;
     font-size: 0.82rem;
-    color: var(--text-dim) !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    margin-top: 4px;
+    line-height: 1.4;
 }
-.top-card .rating-chip {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 2px 9px;
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(251, 191, 36, 0.08));
-    border: 1px solid rgba(251, 191, 36, 0.3);
+.poster-overlay .director .lbl {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5) !important;
+    display: block;
+    margin-bottom: 2px;
+}
+.poster-overlay .play-btn {
+    align-self: flex-start;
+    margin-bottom: auto;
+    margin-top: 0;
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.92);
+    color: #07060c !important;
     border-radius: 999px;
-    color: #fbbf24 !important;
+    font-family: 'Space Grotesk', sans-serif !important;
     font-weight: 600;
-    font-size: 0.78rem;
+    font-size: 0.8rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    display: inline-flex; align-items: center; gap: 6px;
 }
+
+/* Hover state — Netflix-style scale + lift + reveal */
+.poster:hover {
+    transform: translateY(-8px) scale(1.025);
+    box-shadow:
+        0 32px 70px -16px rgba(0, 0, 0, 0.85),
+        0 0 0 1px rgba(167, 139, 250, 0.35) inset,
+        0 0 50px -10px rgba(167, 139, 250, 0.5);
+}
+.poster:hover .poster-overlay { opacity: 1; }
+.poster:hover .poster-info { transform: translateY(-4px); }
+
+/* Top-3 medal accent */
+.poster.top1 { box-shadow: 0 12px 40px -12px rgba(251,191,36,0.5), 0 0 0 1px rgba(251,191,36,0.35) inset; }
+.poster.top2 { box-shadow: 0 12px 40px -12px rgba(209,213,219,0.4), 0 0 0 1px rgba(209,213,219,0.28) inset; }
+.poster.top3 { box-shadow: 0 12px 40px -12px rgba(217,119,6,0.4),  0 0 0 1px rgba(217,119,6,0.28)  inset; }
 
 /* ───── Recommendation cards ───── */
 .rec-card {
@@ -694,24 +858,76 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────────────
 if 'rating' in movies.columns:
     st.markdown(
-        '<div class="section-title"><span class="bar"></span>Top rated<span class="count">TOP 9</span></div>',
+        '<div class="section-title"><span class="bar"></span>Top rated<span class="count">TOP 10</span></div>',
         unsafe_allow_html=True,
     )
 
-    top_rated = movies.nlargest(9, 'rating')[['title', 'rating', 'year']].reset_index(drop=True)
-    cols = st.columns(3, gap="small")
+    # Curated palette pairs — each title deterministically maps to one
+    POSTER_PALETTES = [
+        ("#6366f1", "#ec4899"),  # indigo → pink
+        ("#0ea5e9", "#8b5cf6"),  # sky → violet
+        ("#f43f5e", "#fb923c"),  # rose → orange
+        ("#10b981", "#0ea5e9"),  # emerald → sky
+        ("#a855f7", "#06b6d4"),  # purple → cyan
+        ("#ef4444", "#7c3aed"),  # red → violet
+        ("#f59e0b", "#dc2626"),  # amber → red
+        ("#14b8a6", "#6366f1"),  # teal → indigo
+        ("#db2777", "#7c3aed"),  # pink → violet
+        ("#0891b2", "#f43f5e"),  # cyan → rose
+        ("#84cc16", "#0ea5e9"),  # lime → sky
+        ("#9333ea", "#f59e0b"),  # purple → amber
+    ]
 
-    for i, (_, movie_row) in enumerate(top_rated.iterrows()):
-        with cols[i % 3]:
-            year_str = f"{int(movie_row['year'])}" if pd.notna(movie_row['year']) else "—"
+    def palette_for(title):
+        """Deterministic palette per title — same movie always gets same look."""
+        h = sum(ord(c) for c in title) if title else 0
+        return POSTER_PALETTES[h % len(POSTER_PALETTES)]
+
+    top_cols = ['title', 'rating']
+    for opt in ('year', 'director', 'description'):
+        if opt in movies.columns:
+            top_cols.append(opt)
+
+    top_rated = movies.nlargest(10, 'rating')[top_cols].reset_index(drop=True)
+
+    poster_cols = st.columns(5, gap="small")
+
+    for i, (_, m) in enumerate(top_rated.iterrows()):
+        with poster_cols[i % 5]:
+            c1, c2 = palette_for(m['title'])
+            year_str = f"{int(m['year'])}" if 'year' in m and pd.notna(m['year']) else "—"
+            director_str = m['director'] if 'director' in m and pd.notna(m.get('director')) else "Unknown"
+            primary_genre = "Film"
+            if 'description' in m and pd.notna(m.get('description')):
+                primary_genre = str(m['description']).split(',')[0].strip().upper()
+
+            tier_class = ""
+            if i == 0: tier_class = "top1"
+            elif i == 1: tier_class = "top2"
+            elif i == 2: tier_class = "top3"
+
             st.markdown(
                 f"""
-                <div class="top-card">
-                    <div class="rank">#{i+1:02d}</div>
-                    <div class="title">{movie_row['title']}</div>
-                    <div class="meta">
-                        <span class="rating-chip">★ {movie_row['rating']}</span>
-                        <span>{year_str}</span>
+                <div class="poster {tier_class}" style="animation-delay: {i * 0.05}s;">
+                    <div class="poster-bg" style="--p1: linear-gradient(135deg, {c1} 0%, {c2} 100%);"></div>
+                    <div class="poster-vignette"></div>
+                    <div class="poster-rank">{i+1}</div>
+                    <div class="poster-genre">{primary_genre}</div>
+                    <div class="poster-rating"><span class="star">★</span> {m['rating']}</div>
+                    <div class="poster-overlay">
+                        <div class="play-btn">▶ View</div>
+                        <div class="director">
+                            <span class="lbl">Directed by</span>
+                            {director_str}
+                        </div>
+                    </div>
+                    <div class="poster-info">
+                        <div class="title">{m['title']}</div>
+                        <div class="meta">
+                            <span>{year_str}</span>
+                            <span class="dot"></span>
+                            <span>#{i+1:02d} OF 10</span>
+                        </div>
                     </div>
                 </div>
                 """,
